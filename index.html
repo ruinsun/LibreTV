@@ -16,7 +16,15 @@
   <link rel="stylesheet" href="https://syctv.dpdns.org/css/index.css">
   <!-- ========= TV VIA浏览器 全局适配样式 ========= -->
   <style>
-    /* 遥控器焦点高亮，VIA安卓TV支持:focus，舍弃focus-visible */
+    html {
+      -webkit-text-size-adjust: 100%;
+      text-size-adjust: 100%;
+    }
+    body {
+      transition: transform 0.15s ease-out;
+      transform-origin: center center;
+    }
+    /* 遥控器焦点高亮，VIA安卓TV支持:focus */
     button:focus,
     a:focus,
     input:focus,
@@ -25,13 +33,13 @@
       outline-offset: 3px !important;
       border-radius: 0.5rem;
     }
-    /* 电视无鼠标，hover效果降级，避免干扰遥控器焦点 */
+    /* 电视无鼠标，hover降级 */
     @media (pointer: coarse) {
       *:hover {
         filter: brightness(1.1);
       }
     }
-    /* 加宽滚动条，电视遥控器滚动更方便 */
+    /* 加宽滚动条 */
     ::-webkit-scrollbar {
       width:14px;
       height:14px;
@@ -43,20 +51,39 @@
     ::-webkit-scrollbar-track {
       background:#1a1a1a;
     }
-    /* 降低动画复杂度，防止VIA浏览器卡顿 */
+    /* 降低动画复杂度，防止VIA卡顿 */
     * {
       animation-duration: 0.2s !important;
       transition-duration: 0.2s !important;
     }
-    /* 强制所有可点击元素最小尺寸 >=48px 电视网页标准 */
     button {
       min-height:48px;
       min-width:48px;
     }
+    /* 缩放控制面板浮层 */
+    #scalePanel {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0,0,0,0.75);
+      color:#fff;
+      padding:14px 22px;
+      border-radius:12px;
+      z-index:9999;
+      display:none;
+      font-size:22px;
+      white-space:nowrap;
+    }
   </style>
 </head>
 <body class="page-bg text-white">
-  <!-- 左上角历史按钮【放大尺寸适配遥控器】 -->
+  <!-- 缩放提示面板 -->
+  <div id="scalePanel">
+    缩放：<span id="scaleValue">100</span>% | ↑放大 ↓缩小 ←→移动 | OK关闭
+  </div>
+
+  <!-- 左上角历史按钮 -->
   <div class="fixed top-6 left-6 z-10">
     <button onclick="toggleHistory(event)" class="bg-[#222] hover:bg-[#333] border border-[#333] hover:border-white rounded-lg px-5 py-3 transition-colors" aria-label="观看历史" tabindex="0">
       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -65,7 +92,7 @@
     </button>
   </div>
 
-  <!-- 右上角设置按钮【放大尺寸适配遥控器】 -->
+  <!-- 右上角设置按钮 -->
   <div class="fixed top-6 right-6 z-10">
     <button onclick="toggleSettings(event)" class="bg-[#222] hover:bg-[#333] border border-[#333] hover:border-white rounded-lg px-5 py-3 transition-colors" aria-label="打开设置" tabindex="0">
       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -76,7 +103,7 @@
   </div>
 
   <!-- 历史记录面板 -->
-  <div id="historyPanel" class="history-panel fixed left-0 top-0 h-full bg-[#111] border-r border-[#333] p-6 z-40 transform -translate-x-full transition-transform duration-200" aria-label="观看历史" aria-hidden="true">
+  <div id="historyPanel" class="history-panel fixed left-0 top-0 h-full w-[420px] bg-[#111] border-r border-[#333] p-6 z-40 -translate-x-full transition-transform duration-200" aria-label="观看历史" aria-hidden="true">
     <div class="flex justify-between items-center mb-6">
       <button onclick="toggleHistory()" class="close-btn" tabindex="0">
         <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true" class="w-7 h-7">
@@ -90,7 +117,7 @@
       <div class="text-center text-gray-500 py-8">暂无观看记录</div>
     </div>
     <div class="mt-4 text-center sticky bottom-0 pb-2 pt-2 bg-[#111]">
-      <button onclick="clearViewingHistory()" class="px-6 py-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base transition-all shadow-md" tabindex="0">
+      <button onclick="clearViewingHistory()" class="px-6 py-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base shadow-md" tabindex="0">
         清空历史记录
       </button>
     </div>
@@ -107,7 +134,7 @@
       </button>
     </div>
     <div class="space-y-5">
-      <!-- 数据源设置区域 -->
+      <!-- 数据源设置 -->
       <div class="p-3 bg-[#151515] rounded-lg shadow-inner">
         <label class="block text-base font-medium text-gray-400 mb-3 border-b border-[#333] pb-1">数据源设置</label>
         <div class="flex space-x-3 mb-3">
@@ -116,22 +143,20 @@
           <button onclick="selectAllAPIs(true, true)" class="px-3 py-2 bg-[#333] hover:bg-[#444] text-white text-sm rounded" tabindex="0">全选普通资源</button>
         </div>
         <div class="max-h-40 overflow-y-auto bg-[#191919] p-2 rounded-lg mb-3">
-          <div id="apiCheckboxes">
-            <!-- API复选框动态生成 -->
-          </div>
+          <div id="apiCheckboxes"></div>
         </div>
         <div class="text-sm text-gray-500 flex justify-between items-center">
           <span>已选API数量：<span id="selectedApiCount" class="text-white">0</span></span>
-          <span id="siteStatus" class="ml-2"></span>
+          <span id="siteStatus"></span>
         </div>
       </div>
-      <!-- 自定义API管理区域 -->
+      <!-- 自定义API -->
       <div class="p-3 bg-[#151515] rounded-lg shadow-inner">
         <div class="flex justify-between items-center mb-2">
           <label class="block text-base font-medium text-gray-400 border-b border-[#333] w-full pb-1">自定义API</label>
           <button onclick="showAddCustomApiForm()" class="bg-[#333] hover:bg-[#444] text-white w-10 h-10 rounded-full text-center leading-none text-xl ml-1" tabindex="0">+</button>
         </div>
-        <div id="customApisList" class="max-h-32 overflow-y-auto mb-2"></div>
+        <div id="customApiList" class="max-h-32 overflow-y-auto mb-2"></div>
         <div id="addCustomApiForm" class="hidden mt-2 p-2 bg-[#191919] rounded-lg">
           <input type="text" id="customApiName" placeholder="API名称" class="w-full bg-[#222] border border-[#333] text-white px-3 py-2 rounded mb-3" autocomplete="off">
           <input type="text" id="customApiUrl" placeholder="https://abc.com" class="w-full bg-[#222] border border-[#333] text-white px-3 py-2 rounded mb-3" autocomplete="off">
@@ -156,7 +181,7 @@
               <p class="text-sm text-gray-500 mt-1 filter-description">过滤"伦理片"等黄色内容</p>
             </div>
             <div class="relative inline-block w-14 align-middle select-none">
-              <input type="checkbox" id="yellowFilterToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
+              <input type="checkbox" id="yellowFilterToggle" class="opacity-0 absolute w-full h-full z-10 cursor-pointer">
               <div class="toggle-bg bg-[#333] w-14 h-7 rounded-full transition-colors duration-200 ease-in-out"></div>
               <div class="toggle-dot absolute w-6 h-6 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-200 ease-in-out"></div>
             </div>
@@ -168,7 +193,7 @@
             <p class="text-sm text-gray-500 mt-1">关闭可减少旧版浏览器卡顿</p>
           </div>
           <div class="relative inline-block w-14 align-middle select-none">
-            <input type="checkbox" id="adFilterToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
+            <input type="checkbox" id="adFilterToggle" class="opacity-0 absolute w-full h-full z-10 cursor-pointer">
             <div class="toggle-bg bg-[#333] w-14 h-7 rounded-full transition-colors duration-200 ease-in-out"></div>
             <div class="toggle-dot absolute w-6 h-6 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-200 ease-in-out"></div>
           </div>
@@ -179,7 +204,7 @@
             <p class="text-sm text-gray-500 mt-1">首页显示豆瓣热门影视内容</p>
           </div>
           <div class="relative inline-block w-14 align-middle select-none">
-            <input type="checkbox" id="doubanToggle" class="opacity-0 absolute w-full h-full cursor-pointer z-10">
+            <input type="checkbox" id="doubanToggle" class="opacity-0 absolute w-full h-full z-10 cursor-pointer">
             <div class="toggle-bg bg-[#333] w-14 h-7 rounded-full transition-colors duration-200 ease-in-out"></div>
             <div class="toggle-dot absolute w-6 h-6 bg-white rounded-full top-0.5 left-0.5 transition-transform duration-200 ease-in-out"></div>
           </div>
@@ -188,9 +213,9 @@
       <!-- 一般功能 -->
       <div class="p-3 bg-[#151515] rounded-lg shadow-inner">
         <label class="block text-base font-medium text-gray-400 mb-3 border-b border-[#333] pb-1">一般功能</label>
-        <button onclick="importConfig()" class="px-4 py-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base transition-all shadow-md mb-3" tabindex="0">导入配置</button>
-        <button onclick="exportConfig()" class="px-4 py-3 mb-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base transition-all shadow-md" tabindex="0">导出配置</button>
-        <button onclick="clearLocalStorage()" class="px-4 py-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base transition-all shadow-md" tabindex="0">清除Cookie</button>
+        <button onclick="importConfig()" class="px-4 py-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base shadow-md mb-3" tabindex="0">导入配置</button>
+        <button onclick="exportConfig()" class="px-4 py-3 mb-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base shadow-md" tabindex="0">导出配置</button>
+        <button onclick="clearLocalStorage()" class="px-4 py-3 w-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white rounded-lg text-base shadow-md" tabindex="0">清除Cookie</button>
       </div>
     </div>
   </div>
@@ -208,7 +233,6 @@
         </div>
         <p class="text-gray-400 mb-10 text-xl">自由观影，畅享精彩</p>
       </header>
-
       <div id="searchArea" class="flex-1 flex flex-col items-center justify-center">
         <div class="w-full max-w-3xl">
           <div class="flex items-stretch mb-4 h-16 shadow-lg rounded-lg overflow-hidden">
@@ -224,8 +248,7 @@
           <div id="recentSearches" class="mt-5 flex flex-wrap gap-3" aria-label="最近搜索记录"></div>
         </div>
       </div>
-
-      <!-- 豆瓣热门区域，电视大屏网格加宽 -->
+      <!--豆瓣热门 -->
       <div id="doubanArea" class="w-full my-10 hidden">
         <div class="mx-auto max-w-screen-xl px-3">
           <div class="mb-5">
@@ -245,30 +268,27 @@
               </button>
             </div>
             <div class="overflow-x-auto pb-3">
-              <div id="douban-tags" class="flex space-x-3 min-w-max"></div>
+              <div id="doubanTags" class="flex space-x-3 min-w-max"></div>
             </div>
           </div>
-          <div id="douban-results" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-5"></div>
+          <div id="doubanResults" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-5"></div>
         </div>
       </div>
-
-      <!-- 搜索结果区域，电视大屏卡片 -->
+      <!--搜索结果 -->
       <div id="resultsArea" class="w-full hidden">
         <div class="mx-auto max-w-7xl px-3">
           <div class="flex justify-end items-center mb-5">
             <div class="text-base text-gray-400">
-              <span id="searchResultsCount">0</span> 个结果
+              <span id="searchResultCount">0</span> 个结果
             </div>
           </div>
-          <div id="results" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-5">
-            <!-- JS动态渲染结果卡片，代码内会自动加上tabindex="0" -->
-          </div>
+          <div id="results" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-5"></div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- 页脚 -->
+  <!--页脚 -->
   <footer class="footer mt-8 py-6 border-t border-[#333] bg-[#0a0a0a]">
     <div class="container mx-auto px-4">
       <div class="flex flex-col md:flex-row justify-between items-center">
@@ -283,8 +303,7 @@
         </div>
         <div class="text-center md:text-right">
           <p class="text-gray-500 text-base max-w-md">
-            免责声明：本站仅为视频搜索工具，不存储、上传或分发任何视频内容。
-            所有视频均来自第三方API接口。如有侵权，请联系相关内容提供方。
+            免责声明：本站仅为视频搜索工具，不存储、上传或分发任何视频资源。所有视频均来自第三方公开接口，如有侵权请联系对应站点。
           </p>
           <div class="mt-3 flex justify-center md:justify-end space-x-5">
             <a href="https://syctv.dpdns.org/about.html" class="text-gray-400 hover:text-white text-base transition-colors" tabindex="0">关于我们</a>
@@ -296,7 +315,7 @@
     </div>
   </footer>
 
-  <!-- 详情模态框 -->
+  <!--详情弹窗 -->
   <div id="modal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center transition-opacity duration-200 z-40">
     <div class="bg-[#111] p-8 rounded-lg w-11/12 max-w-5xl border border-[#333] max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center mb-6 flex-none">
@@ -304,14 +323,13 @@
         <button onclick="closeModal()" class="text-gray-400 hover:text-white text-3xl transition-colors flex-shrink-0" tabindex="0">&times;</button>
       </div>
       <div id="modalContent" class="overflow-auto flex-1 min-h-0">
-        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3">
-        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-3"></div>
       </div>
     </div>
   </div>
 
-  <!-- 密码验证弹窗 -->
-  <div id="passwordModal" class="fixed inset-0 bg-black/95 hidden items-center justify-center z-[65] transition-opacity duration-200">
+  <!--密码弹窗 -->
+  <div id="passwordModal" class="fixed inset-0 bg-black/95 hidden flex items-center justify-center z-[65] transition-opacity duration-200">
     <div class="bg-[#111] p-8 rounded-lg w-11/12 max-w-md border border-[#333] max-h-[90vh] flex flex-col">
       <div class="flex justify-between items-center mb-6 flex-none">
         <h2 class="text-2xl font-bold gradient-text">访问验证</h2>
@@ -331,15 +349,15 @@
     </div>
   </div>
 
-  <!-- 版权声明弹窗 -->
-  <div id="disclaimerModal" class="fixed inset-0 bg-black/90 hidden items-center justify-center z-[60]">
+  <!--免责弹窗 -->
+  <div id="disclaimerModal" class="fixed inset-0 bg-black/90 hidden flex items-center justify-center z-[60]">
     <div class="bg-[#111] p-8 rounded-lg border border-[#333] w-11/12 max-w-2xl max-h-[90vh] overflow-y-auto">
       <h2 class="text-2xl font-bold gradient-text mb-6 text-center">使用声明</h2>
       <div class="text-gray-300 space-y-4 text-base">
-        <p>欢迎使用 LibreTV。在开始使用前，请您了解并同意以下条款：</p>
-        <p><strong class="text-blue-400">服务性质：</strong> LibreTV 仅提供视频搜索服务，不直接提供、存储或上传任何视频内容。所有搜索结果均来自第三方公开接口。</p>
-        <p><strong class="text-blue-400">用户责任：</strong> 用户在使用本站服务时，须遵守相关法律法规，不得利用搜索结果从事侵权行为，如下载、传播未经授权的作品等。</p>
-        <p><strong class="text-blue-400">广告风险提示：</strong> 本站所有视频均来自第三方采集站，视频中出现的广告与本站无关，请勿相信或点击视频中的任何广告内容，谨防上当受骗。</p>
+        <p>欢迎使用 LibreTV。在开始使用前，请阅读以下条款：</p>
+        <p><strong class="text-blue-400">服务性质：</strong>LibreTV仅为视频搜索工具，不直接提供、存储、上传任何视频资源，全部内容来自第三方公开接口。</p>
+        <p><strong class="text-blue-400">用户责任：</strong>使用本网站产生的一切责任由使用者自行承担，禁止用于侵权用途。</p>
+        <p><strong class="text-blue-400">广告风险提示：</strong>第三方源可能带有广告，本站无法控制。</p>
       </div>
       <div class="mt-6 flex justify-center">
         <button id="acceptDisclaimerBtn" class="px-8 py-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white font-semibold rounded-lg text-lg hover:shadow-lg transition-all" tabindex="0">我已了解并接受</button>
@@ -347,11 +365,12 @@
     </div>
   </div>
 
-  <!-- 错误提示框 -->
+  <!--提示框 -->
   <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-200 opacity-0 -translate-y-full z-50">
-    <p id="toastMessage" class="text-base"></p>
+    <p id="toastMsg" class="text-base"></p>
   </div>
-  <!-- loading 提示框 -->
+
+  <!--加载提示 -->
   <div id="loading" class="fixed inset-0 bg-black/80 hidden items-center justify-center z-50">
     <div class="bg-[#111] p-8 rounded-lg border border-[#333] flex items-center space-x-4">
       <div class="w-8 h-8 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -359,7 +378,6 @@
     </div>
   </div>
 
-  <!-- JSON-LD 结构化数据 -->
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -396,34 +414,125 @@
   <script src="https://syctv.dpdns.org/js/version-check.js"></script>
   <script src="https://syctv.dpdns.org/js/index-page.js"></script>
 
-  <!-- ========= TV VIA浏览器遥控器增强JS【新增】 ========= -->
+  <!-- ========= TV遥控器增强 + 长按OK缩放功能【新增核心】 ========= -->
   <script>
     (function(){
-      // 可聚焦元素选择器
-      const focusSelector = 'button,input,a,[tabindex]:not([tabindex="-1"])';
+      // 缩放参数
+      let scale = 1.0;
+      let offsetX = 0;
+      let offsetY = 0;
+      const scaleStep = 0.05;
+      const minScale = 0.4;
+      const maxScale = 1.8;
+      const moveStep = 40;
+      const scalePanel = document.getElementById('scalePanel');
+      const scaleValueText = document.getElementById('scaleValue');
+      let scalePanelOpen = false;
+
+      // OK长按逻辑
+      let okKeyDownTime = 0;
+      let okTimer = null;
+      const longPressMs = 2000;
+
+      // 更新页面变换
+      function updateBodyTransform(){
+        document.body.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+        scaleValueText.innerText = Math.round(scale*100);
+      }
+
+      function openScalePanel(){
+        scalePanelOpen = true;
+        scalePanel.style.display = 'block';
+      }
+      function closeScalePanel(){
+        scalePanelOpen = false;
+        scalePanel.style.display = 'none';
+      }
+
+      // 全局键盘监听
       document.addEventListener('keydown', function(e){
-        const keyList = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Enter'];
-        if(!keyList.includes(e.key)) return;
-        // 方向键阻止页面滚动，交给遥控器焦点跳转
-        if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.key)){
+        const key = e.key;
+        // OK键监听
+        if(key === 'Enter'){
+          if(okKeyDownTime === 0){
+            okKeyDownTime = Date.now();
+            okTimer = setTimeout(()=>{
+              // 长按OK，弹出缩放面板
+              openScalePanel();
+            }, longPressMs);
+          }
+          // 如果缩放面板打开，按OK关闭面板
+          if(scalePanelOpen){
+            e.preventDefault();
+            closeScalePanel();
+            return;
+          }
+        }
+
+        // 缩放面板激活状态，上下左右控制缩放、移动画面
+        if(scalePanelOpen){
+          e.preventDefault();
+          switch(key){
+            case 'ArrowUp':
+              scale = Math.min(maxScale, scale + scaleStep);
+              updateBodyTransform();
+              break;
+            case 'ArrowDown':
+              scale = Math.max(minScale, scale - scaleStep);
+              updateBodyTransform();
+              break;
+            case 'ArrowLeft':
+              offsetX += moveStep;
+              updateBodyTransform();
+              break;
+            case 'ArrowRight':
+              offsetX -= moveStep;
+              updateBodyTransform();
+              break;
+          }
+          return;
+        }
+
+        // 缩放面板关闭时，原有遥控器焦点逻辑（阻止页面滚动）
+        const keyList = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight'];
+        if(keyList.includes(key)){
           e.preventDefault();
         }
       })
-      // 页面加载完成自动聚焦搜索框，开机直接输入
-      window.addEventListener('load', function(){
-        const searchInput = document.getElementById("searchInput");
-        if(searchInput) searchInput.focus();
+
+      document.addEventListener('keyup', function(e){
+        if(e.key === 'Enter'){
+          clearTimeout(okTimer);
+          const pressDuration = Date.now() - okKeyDownTime;
+          // 短按OK：正常点击，不触发缩放面板
+          if(pressDuration < longPressMs){
+            const active = document.activeElement;
+            if(active) active.click();
+          }
+          okKeyDownTime = 0;
+        }
       })
-      // 监听动态渲染的搜索结果卡片，自动添加tabindex，让遥控器选中
+
+      // 动态卡片自动加tabindex
+      const focusSelector = 'button,input,a,[tabindex]:not([tabindex="-1"])';
       const observer = new MutationObserver(()=>{
-        document.querySelectorAll("#results > div, #douban-results > div").forEach(item=>{
+        document.querySelectorAll("#results > div, #doubanResults > div").forEach(item=>{
           if(!item.hasAttribute('tabindex')){
             item.setAttribute('tabindex','0');
           }
         })
       });
-      observer.observe(document.getElementById('results'),{childList:true,subtree:true});
-      observer.observe(document.getElementById('douban-results'),{childList:true,subtree:true});
+      const resWrap = document.getElementById('results');
+      const doubanWrap = document.getElementById('doubanResults');
+      if(resWrap) observer.observe(resWrap,{childList:true,subtree:true});
+      if(doubanWrap) observer.observe(doubanWrap,{childList:true,subtree:true});
+
+      // 页面加载自动聚焦搜索框
+      window.addEventListener('load', function(){
+        const searchInput = document.getElementById("searchInput");
+        if(searchInput) searchInput.focus();
+        updateBodyTransform();
+      })
     })();
   </script>
 </body>
